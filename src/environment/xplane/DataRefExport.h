@@ -37,6 +37,7 @@ private:
     std::function<void(void *, T)>  onWrite;
     XPLMDataRef                     xpDataRef;
 
+    void registerDataRef(const std::string& name);
 };
 
 } // namespace avitab

@@ -18,56 +18,49 @@
 
 #include "DataRefExport.h"
 
+#include <XPLM/XPLMPlugin.h>
+
+# define MSG_ADD_DATAREF 0x01000000
+
 namespace avitab {
 
 template <>
 DataRefExport<int>::DataRefExport(const std::string &name, void *ref, std::function<int(void *)> onRd, std::function<void(void *, int)> onWr)
 :   ownerRef(ref), onRead(onRd), onWrite(onWr)
 {
-    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Int, true,
+    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Int, onWr != nullptr,
         [] (void *r) { auto self = reinterpret_cast<DataRefExport<int> *>(r); return self->onRead(self->ownerRef); },
-        [] (void *r, int v) { auto self = reinterpret_cast<DataRefExport<int> *>(r); self->onWrite(self->ownerRef, v); },
+        onWr ? [] (void *r, int v) { auto self = reinterpret_cast<DataRefExport<int> *>(r); self->onWrite(self->ownerRef, v); } : (XPLMSetDatai_f)nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-        this, this
+        this, onWr? this : nullptr
     );
+    registerDataRef(name);
 }
 
 template <>
 DataRefExport<int>::DataRefExport(const std::string &name, void *ref, std::function<int(void *)> onRd)
-:   ownerRef(ref), onRead(onRd), onWrite(nullptr)
+: DataRefExport<int>(name, ref, onRd, nullptr)
 {
-    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Int, false,
-        [] (void *r) { auto self = reinterpret_cast<DataRefExport<int> *>(r); return self->onRead(self->ownerRef); },
-        nullptr,
-        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-        this, nullptr
-    );
 }
 
 template <>
 DataRefExport<float>::DataRefExport(const std::string &name, void *ref, std::function<float(void *)> onRd, std::function<void(void *, float)> onWr)
 :   ownerRef(ref), onRead(onRd), onWrite(onWr)
 {
-    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Float, true,
+    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Float, onWr != nullptr,
         nullptr, nullptr,
         [] (void *r) { auto self = reinterpret_cast<DataRefExport<float> *>(r); return self->onRead(self->ownerRef); },
-        [] (void *r, float v) { auto self = reinterpret_cast<DataRefExport<float> *>(r); self->onWrite(self->ownerRef, v); },
+        onWr ? [] (void *r, float v) { auto self = reinterpret_cast<DataRefExport<float> *>(r); self->onWrite(self->ownerRef, v); } : (XPLMSetDataf_f)nullptr,
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-        this, this
+        this, onWr ? this : nullptr
     );
+    registerDataRef(name);
 }
 
 template <>
 DataRefExport<float>::DataRefExport(const std::string &name, void *ref, std::function<float(void *)> onRd)
-:   ownerRef(ref), onRead(onRd), onWrite(nullptr)
+:   DataRefExport<float>(name, ref, onRd, nullptr)
 {
-    xpDataRef = XPLMRegisterDataAccessor(name.c_str(), xplmType_Float, false,
-        nullptr, nullptr,
-        [] (void *r) { auto self = reinterpret_cast<DataRefExport<float> *>(r); return self->onRead(self->ownerRef); },
-        nullptr,
-        nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
-        this, nullptr
-    );
 }
 
 template <typename T>
@@ -76,6 +69,13 @@ DataRefExport<T>::~DataRefExport()
     XPLMUnregisterDataAccessor(xpDataRef);
 }
 
+template <typename T>
+void DataRefExport<T>::registerDataRef(const std::string &name) {
+    XPLMPluginID PluginID = XPLMFindPluginBySignature("xplanesdk.examples.DataRefEditor");
+    if (PluginID != XPLM_NO_PLUGIN_ID){
+        XPLMSendMessageToPlugin(PluginID, MSG_ADD_DATAREF, (void*)name.c_str());
+    }
+}
 
 template class DataRefExport<int>;
 template class DataRefExport<float>;

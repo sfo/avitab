@@ -73,10 +73,14 @@ private:
     std::mutex drawMutex;
     bool needsRedraw = false;
     std::unique_ptr<DataRefExport<int>> panelLeftRef, panelBottomRef, panelWidthRef, panelHeightRef;
+    std::unique_ptr<DataRefExport<int>> mouseOverrideRef;
+    std::unique_ptr<DataRefExport<float>> clickXoverrideRef, clickYoverrideRef;
     int panelLeft = 0, panelBottom = 0, panelWidth = 0, panelHeight = 0;
     std::vector<int> vrTriggerIndices;
     bool mouseDownFromTrigger = false;
     bool hasPanel = false;
+    int mouseOverride;
+    float clickXoverride, clickYoverride;
 
     void onDraw();
     void onDrawPanel();
@@ -92,6 +96,9 @@ private:
     void setupVRCapture();
     bool onClickCapture(int x, int y, XPLMMouseStatus status);
     bool onMouseWheelCapture(int x, int y, int wheel, int clicks);
+
+    float getClickX();
+    float getClickY();
 
     void setupKeyboard();
 

@@ -52,6 +52,18 @@ XPlaneGUIDriver::XPlaneGUIDriver():
     panelHeightRef = std::make_unique<DataRefExport<int>>("avitab/panel_height", this,
         [] (void *self) { return (reinterpret_cast<XPlaneGUIDriver *>(self))->panelHeight; },
         [] (void *self, int v) { (reinterpret_cast<XPlaneGUIDriver *>(self))->panelHeight = v; });
+
+    mouseOverrideRef = std::make_unique<DataRefExport<int>>("avitab/mouse_override", this,
+        [] (void *self) { return (reinterpret_cast<XPlaneGUIDriver *>(self))->mouseOverride; },
+        [] (void *self, bool v) { (reinterpret_cast<XPlaneGUIDriver *>(self))->mouseOverride = v; });
+
+    clickXoverrideRef = std::make_unique<DataRefExport<float>>("avitab/click_x_override", this,
+        [] (void *self) { return (reinterpret_cast<XPlaneGUIDriver *>(self))->clickXoverride; },
+        [] (void *self, float v) { (reinterpret_cast<XPlaneGUIDriver *>(self))->clickXoverride = v; });
+
+    clickYoverrideRef = std::make_unique<DataRefExport<float>>("avitab/click_y_override", this,
+        [] (void *self) { return (reinterpret_cast<XPlaneGUIDriver *>(self))->clickYoverride; },
+        [] (void *self, float v) { (reinterpret_cast<XPlaneGUIDriver *>(self))->clickYoverride = v; });
 }
 
 void XPlaneGUIDriver::init(int width, int height) {
@@ -528,8 +540,8 @@ bool XPlaneGUIDriver::onClickCapture(int x, int y, XPLMMouseStatus status) {
     int bottom = panelBottom;
     correctRatio(left, top, right, bottom, true);
 
-    float tx = clickX;
-    float ty = clickY;
+    float tx = getClickX();
+    float ty = getClickY();
 
     bool isInWindow = false;
     if (tx >= left && tx < right && ty >= bottom && ty < top) {
@@ -578,8 +590,8 @@ bool XPlaneGUIDriver::onMouseWheelCapture(int x, int y, int wheel, int clicks) {
 
     int guiX, guiY;
 
-    guiX = (float) clickX;
-    guiY = (float) clickY;
+    guiX = getClickX();
+    guiY = getClickY();
 
     bool isInWindow = false;
     if (guiX >= left && guiX < right && guiY >= bottom && guiY < top) {
@@ -593,6 +605,14 @@ bool XPlaneGUIDriver::onMouseWheelCapture(int x, int y, int wheel, int clicks) {
         return true;
     }
     return false;
+}
+
+float XPlaneGUIDriver::getClickX() {
+    return mouseOverride ? clickXoverride : clickX;
+}
+
+float XPlaneGUIDriver::getClickY() {
+    return mouseOverride ? clickYoverride : clickY;
 }
 
 void XPlaneGUIDriver::setupKeyboard() {
